@@ -1,0 +1,15 @@
+# Build output
+**/bin/
+**/obj/
+
+# Visual Studio
+.vs/
+*.user
+
+# Secrets — never commit
+secrets.txt
+**/*firebase*adminsdk*.json
+**/*service-account*.json
+appsettings.secrets.json
+
+# User secrets are stored outside the repo by .NET tooling automatically

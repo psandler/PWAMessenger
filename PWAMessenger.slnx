@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="PWAMessenger.Api/PWAMessenger.Api.csproj" />
+  <Project Path="PWAMessenger.Client/PWAMessenger.Client.csproj" />
+</Solution>
