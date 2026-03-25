@@ -1,4 +1,10 @@
 <Solution>
+  <Folder Name="/SolutionFolder/">
+    <File Path="CLAUDE.md" />
+  </Folder>
+  <Folder Name="/SolutionFolder/Documents/">
+    <File Path="Documents/setup-database.sql" />
+  </Folder>
   <Project Path="PWAMessenger.Api/PWAMessenger.Api.csproj" />
   <Project Path="PWAMessenger.Client/PWAMessenger.Client.csproj" />
 </Solution>
