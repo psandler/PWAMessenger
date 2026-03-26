@@ -41,6 +41,11 @@ jobs:
           echo '{ "ApiBaseUrl": "${{ secrets.API_BASE_URL }}" }' \
             > publish/wwwroot/appsettings.json
 
+      - name: Create stable dotnet.js alias (.NET 10 fingerprints runtime files but blazor.webassembly.js imports the stable name)
+        run: |
+          DOTNET_JS=$(ls publish/wwwroot/_framework/dotnet.*.js | grep -v native | grep -v runtime | head -1)
+          cp "$DOTNET_JS" publish/wwwroot/_framework/dotnet.js
+
       - name: Add .nojekyll
         run: touch publish/wwwroot/.nojekyll
 
