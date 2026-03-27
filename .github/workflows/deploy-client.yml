@@ -36,4 +36,3 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: pwamessenger
           directory: publish/wwwroot
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
