@@ -1,17 +1,15 @@
 # PWAMessenger
 
-A proof-of-concept demonstrating OS-level push notifications between two browser/PWA instances using Blazor WebAssembly and Firebase Cloud Messaging.
-
-User A sends a message to User B. Device B receives an OS notification even when the PWA is in the background.
+A Blazor WebAssembly PWA with Firebase Cloud Messaging push notifications.
 
 **Live client:** https://pwamessenger.pages.dev
 
-## Architecture
+## Stack
 
-- **Frontend:** Blazor WebAssembly PWA, deployed to Cloudflare Pages
-- **Backend:** ASP.NET Core Web API, runs locally and is exposed via Visual Studio Dev Tunnels
-- **Database:** SQL Server (local)
-- **Push:** Firebase Cloud Messaging
+- **Frontend:** Blazor WebAssembly PWA (.NET 10), deployed to Cloudflare Pages
+- **Backend:** ASP.NET Core Web API (.NET 10)
+- **Database:** SQL Server
+- **Push:** Firebase Cloud Messaging (FCM)
 
 ## Running locally
 
@@ -20,25 +18,17 @@ User A sends a message to User B. Device B receives an OS notification even when
    ```json
    { "Firebase:CredentialPath": "C:\\path\\to\\adminsdk.json" }
    ```
-3. Start the API:
+3. Start both projects:
    ```bash
    dotnet run --project PWAMessenger.Api
-   ```
-4. Start the client:
-   ```bash
    dotnet run --project PWAMessenger.Client
    ```
 
-The client runs at `https://localhost:7056` and calls the API at `https://localhost:7102`.
+API runs at `https://localhost:7102`. Client runs at `https://localhost:7056`.
 
-## Cross-device testing
+## Deployment
 
-Start a Dev Tunnel in Visual Studio (persistent + public), update the `API_BASE_URL`
-GitHub Actions secret with the tunnel URL, then push to trigger a redeploy. Both
-devices open the Cloudflare Pages URL.
+The client deploys automatically to Cloudflare Pages on push to `main` via GitHub Actions.
+The API runs locally and is exposed over HTTPS via Visual Studio Dev Tunnels for cross-device access.
 
-## Docs
-
-- `Documents/blazor-fcm-push-poc-spec.md` — full specification
-- `Documents/setup-database.sql` — database schema and seed data
-- `Documents/firebase-api-key-security.md` — notes on the Firebase API key
+Update the `API_BASE_URL` GitHub Actions secret with the current Dev Tunnel URL before deploying.
