@@ -4,11 +4,11 @@ A proof-of-concept demonstrating OS-level push notifications between two browser
 
 User A sends a message to User B. Device B receives an OS notification even when the PWA is in the background.
 
-**Live client:** https://psandler.github.io/PWAMessenger/
+**Live client:** https://pwamessenger.pages.dev
 
 ## Architecture
 
-- **Frontend:** Blazor WebAssembly PWA, deployed to GitHub Pages
+- **Frontend:** Blazor WebAssembly PWA, deployed to Cloudflare Pages
 - **Backend:** ASP.NET Core Web API, runs locally and is exposed via Visual Studio Dev Tunnels
 - **Database:** SQL Server (local)
 - **Push:** Firebase Cloud Messaging
@@ -35,11 +35,10 @@ The client runs at `https://localhost:7056` and calls the API at `https://localh
 
 Start a Dev Tunnel in Visual Studio (persistent + public), update the `API_BASE_URL`
 GitHub Actions secret with the tunnel URL, then push to trigger a redeploy. Both
-devices open the GitHub Pages URL.
+devices open the Cloudflare Pages URL.
 
 ## Docs
 
 - `Documents/blazor-fcm-push-poc-spec.md` — full specification
 - `Documents/setup-database.sql` — database schema and seed data
-- `Documents/github-pages-deployment-plan.md` — deployment details
 - `Documents/firebase-api-key-security.md` — notes on the Firebase API key
