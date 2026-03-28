@@ -3,7 +3,9 @@
     "allow": [
       "WebFetch(domain:firebase.google.com)",
       "Bash(dotnet add:*)",
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs"
     ]
   }
 }

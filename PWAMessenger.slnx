@@ -3,6 +3,8 @@
     <File Path="CLAUDE.md" />
   </Folder>
   <Folder Name="/SolutionFolder/Documents/">
+    <File Path="Documents/architecture.md" />
+    <File Path="Documents/firebase-api-key-security.md" />
     <File Path="Documents/setup-database.sql" />
   </Folder>
   <Project Path="PWAMessenger.Api/PWAMessenger.Api.csproj" />
