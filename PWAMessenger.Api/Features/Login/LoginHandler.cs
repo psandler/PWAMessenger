@@ -8,7 +8,7 @@ public class LoginHandler(AppDbContext db)
     public async Task<LoginResult> HandleAsync(LoginCommand command, CancellationToken ct = default)
     {
         var exists = await db.InvitedUsers
-            .AnyAsync(u => u.PhoneNumber == command.PhoneNumber, ct);
+            .AnyAsync(u => u.Email == command.Email, ct);
 
         return exists ? LoginResult.Proceed : LoginResult.Rejected;
     }

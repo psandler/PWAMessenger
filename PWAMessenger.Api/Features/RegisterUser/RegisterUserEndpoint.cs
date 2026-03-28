@@ -8,7 +8,7 @@ public static class RegisterUserEndpoint
 {
     public static IEndpointRouteBuilder MapRegisterUserEndpoints(this IEndpointRouteBuilder app)
     {
-        // Called after Auth0 login to complete first-time onboarding
+        // Called after Auth0 login to complete first-time onboarding.
         app.MapPost("/api/users/register", async (
             RegisterUserCommand command,
             RegisterUserHandler handler,
@@ -16,9 +16,12 @@ public static class RegisterUserEndpoint
             CancellationToken ct) =>
         {
             var auth0Id = ctx.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (auth0Id is null) return Results.Unauthorized();
+            var email = ctx.User.FindFirst(ClaimTypes.Email)?.Value
+                     ?? ctx.User.FindFirst("email")?.Value;
 
-            return await handler.HandleAsync(auth0Id, command, ct);
+            if (auth0Id is null || email is null) return Results.Unauthorized();
+
+            return await handler.HandleAsync(auth0Id, email, command, ct);
         }).RequireAuthorization();
 
         // Called after Auth0 login to determine first-time vs. returning user.

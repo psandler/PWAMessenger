@@ -15,17 +15,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             e.HasKey(u => u.UserId);
             e.HasIndex(u => u.Auth0Id).IsUnique();
-            e.HasIndex(u => u.PhoneNumber).IsUnique();
+            e.HasIndex(u => u.Email).IsUnique();
             e.Property(u => u.Auth0Id).HasMaxLength(100).IsRequired();
-            e.Property(u => u.PhoneNumber).HasMaxLength(20).IsRequired();
+            e.Property(u => u.Email).HasMaxLength(256).IsRequired();
             e.Property(u => u.DisplayName).HasMaxLength(100).IsRequired();
         });
 
         modelBuilder.Entity<InvitedUser>(e =>
         {
             e.HasKey(i => i.InvitedUserId);
-            e.HasIndex(i => i.PhoneNumber).IsUnique();
-            e.Property(i => i.PhoneNumber).HasMaxLength(20).IsRequired();
+            e.HasIndex(i => i.Email).IsUnique();
+            e.Property(i => i.Email).HasMaxLength(256).IsRequired();
             e.Property(i => i.InvitedAt).HasDefaultValueSql("GETUTCDATE()");
             e.HasOne(i => i.InvitedByUser)
              .WithMany()

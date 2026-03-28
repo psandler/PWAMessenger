@@ -18,21 +18,21 @@ The app is intentionally scoped. It is not a scheduling tool, a league manager, 
 ## Identity & Authorization
 
 ### Principles
-- Invite-only system. A user cannot authenticate until their phone number has been pre-registered in the system.
-- Phone number is the user's identity. No usernames, email addresses, or other identifiers.
-- Auth0 is the authentication provider (free tier, up to 7500 monthly active users).
+- Invite-only system. A user cannot authenticate until their email address has been pre-registered in the system.
+- Email address is the user's identity. No usernames, phone numbers, or other identifiers.
+- Auth0 is the authentication provider (free tier, up to 7,500 monthly active users).
 
 ### Login Flow
-1. User opens the app and enters their phone number.
-2. App checks the `InvitedUsers` table — if the number is not present, the user is rejected before Auth0 is contacted.
-3. If the number is present, the app hands off to Auth0 SMS passwordless login.
-4. Auth0 sends a one-time SMS code to the phone number.
-5. User enters the code. Auth0 issues a JWT.
-6. The JWT `sub` claim (format: `sms|+1XXXXXXXXXX`) becomes the user's permanent identity in the system.
+1. User opens the app and enters their email address.
+2. App checks the `InvitedUsers` table — if the email is not present, the user is rejected before Auth0 is contacted.
+3. If the email is present, the app hands off to Auth0 email passwordless login.
+4. Auth0 sends a magic link or one-time code to the email address. Auth0 handles delivery natively — no external email provider required.
+5. User clicks the link or enters the code. Auth0 issues a JWT.
+6. The JWT `sub` claim becomes the user's permanent Auth0Id in the system. The `email` claim carries the email address.
 7. On first login, the user is prompted to enter a display name. A `Users` record is then created. On subsequent logins, the FCM token is refreshed and the user goes directly to the app.
 
 ### InvitedUsers Table
-Acts as a gatekeeper. A phone number must exist here before any Auth0 interaction is permitted. The invite and contacts flow that populates this table is defined separately.
+Acts as a gatekeeper. An email address must exist here before any Auth0 interaction is permitted. The invite and contacts flow that populates this table is defined separately.
 
 ### Display Name
 Users enter a preferred display name during onboarding (first login). This is what other users see throughout the app. Stored in the `Users` table as `DisplayName`.
@@ -141,14 +141,14 @@ Two separate layers share the same SQL Server database:
 -- Authenticated users (EF read model, written by UserRegistered projection)
 Users
   UserId       INT PRIMARY KEY IDENTITY
-  Auth0Id      NVARCHAR(100) NOT NULL UNIQUE   -- Auth0 sub claim (e.g. sms|+1XXXXXXXXXX)
-  PhoneNumber  NVARCHAR(20)  NOT NULL UNIQUE   -- derived from Auth0Id for readability
+  Auth0Id      NVARCHAR(100) NOT NULL UNIQUE   -- Auth0 sub claim
+  Email        NVARCHAR(256) NOT NULL UNIQUE   -- from Auth0 email claim
   DisplayName  NVARCHAR(100) NOT NULL          -- user-chosen name entered during onboarding
 
 -- Pre-registration gate (not event-sourced — plain relational data)
 InvitedUsers
   InvitedUserId  INT PRIMARY KEY IDENTITY
-  PhoneNumber    NVARCHAR(20) NOT NULL UNIQUE
+  Email          NVARCHAR(256) NOT NULL UNIQUE
   InvitedAt      DATETIME2 NOT NULL DEFAULT GETUTCDATE()
   InvitedBy      INT NULL REFERENCES Users(UserId)   -- null for seed/admin invites
 

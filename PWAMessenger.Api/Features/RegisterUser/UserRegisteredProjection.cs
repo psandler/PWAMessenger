@@ -12,7 +12,7 @@ public class UserRegisteredProjection
         db.Users.Add(new User
         {
             Auth0Id = @event.Auth0Id,
-            PhoneNumber = @event.PhoneNumber,
+            Email = @event.Email,
             DisplayName = @event.DisplayName
         });
 
