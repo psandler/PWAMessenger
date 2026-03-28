@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/SolutionFolder/">
     <File Path="CLAUDE.md" />
+    <File Path="Documents/human-todo.md" />
   </Folder>
   <Folder Name="/SolutionFolder/Documents/">
     <File Path="Documents/architecture.md" />

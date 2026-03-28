@@ -5,7 +5,11 @@
       "Bash(dotnet add:*)",
       "Bash(dotnet build:*)",
       "mcp__context7__resolve-library-id",
-      "mcp__context7__get-library-docs"
+      "mcp__context7__get-library-docs",
+      "WebFetch(domain:martendb.io)",
+      "WebFetch(domain:polecat.netlify.app)",
+      "WebSearch",
+      "WebFetch(domain:jeremydmiller.com)"
     ]
   }
 }
