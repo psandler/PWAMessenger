@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using PWAMessenger.Client.Models;
 
@@ -5,19 +6,23 @@ namespace PWAMessenger.Client.Services;
 
 public class ApiService(HttpClient http)
 {
-    public Task<List<User>?> GetUsersAsync() =>
-        http.GetFromJsonAsync<List<User>>("api/users");
-
-    public async Task RegisterTokenAsync(int userId, string token)
+    // Returns null if the user is not yet registered (first login).
+    public async Task<User?> GetCurrentUserAsync()
     {
-        var response = await http.PostAsJsonAsync("api/tokens", new { userId, token });
+        var response = await http.GetAsync("api/users/me");
+        if (response.StatusCode == HttpStatusCode.NotFound) return null;
         response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<User>();
     }
 
-    public async Task<bool> SendMessageAsync(int fromUserId, int toUserId, string messageText)
+    public async Task<bool> RegisterUserAsync(string displayName)
     {
-        var response = await http.PostAsJsonAsync("api/messages/send",
-            new { fromUserId, toUserId, messageText });
+        var response = await http.PostAsJsonAsync("api/users/register", new { DisplayName = displayName });
         return response.IsSuccessStatusCode;
+    }
+
+    public async Task RegisterFcmTokenAsync(string fcmToken)
+    {
+        await http.PostAsJsonAsync("api/notifications/register", new { FcmToken = fcmToken });
     }
 }

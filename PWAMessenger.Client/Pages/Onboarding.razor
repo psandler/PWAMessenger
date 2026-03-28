@@ -1,0 +1,65 @@
+@page "/onboarding"
+@attribute [Authorize]
+@inject ApiService Api
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject IConfiguration Config
+
+@if (!awaitingNotification)
+{
+    <h2>Welcome!</h2>
+    <p>What should we call you?</p>
+
+    <input @bind="displayName" placeholder="Display Name" />
+    <button @onclick="RegisterAsync" disabled="@loading">Continue</button>
+
+    @if (error is not null)
+    {
+        <p style="color:red">@error</p>
+    }
+}
+else
+{
+    <h2>One more thing</h2>
+    <p>Enable notifications to receive match invites and messages.</p>
+    <button @onclick="RequestNotificationsAsync">Allow Notifications</button>
+    <button @onclick="SkipNotifications">Skip for Now</button>
+}
+
+@code {
+    string displayName = "";
+    bool loading;
+    bool awaitingNotification;
+    string? error;
+    IJSObjectReference? pushModule;
+
+    protected override async Task OnInitializedAsync()
+    {
+        pushModule = await JS.InvokeAsync<IJSObjectReference>("import", "./push.js");
+    }
+
+    async Task RegisterAsync()
+    {
+        if (string.IsNullOrWhiteSpace(displayName)) return;
+        loading = true;
+        var success = await Api.RegisterUserAsync(displayName);
+        loading = false;
+        if (!success)
+        {
+            error = "Registration failed. Please try again.";
+            return;
+        }
+        awaitingNotification = true;
+    }
+
+    async Task RequestNotificationsAsync()
+    {
+        var vapidKey = Config["Firebase:VapidKey"]!;
+        var token = await pushModule!.InvokeAsync<string?>("requestPermissionAndGetToken", vapidKey);
+        if (token is not null)
+            await Api.RegisterFcmTokenAsync(token);
+        Navigation.NavigateTo("/", replace: true);
+    }
+
+    void SkipNotifications() => Navigation.NavigateTo("/", replace: true);
+}

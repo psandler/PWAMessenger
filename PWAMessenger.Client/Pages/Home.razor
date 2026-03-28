@@ -1,153 +1,24 @@
 @page "/"
-@inject ApiService ApiService
-@inject IJSRuntime JS
+@attribute [Authorize]
+@inject ApiService Api
+@inject NavigationManager Navigation
 
-<div class="container mt-4" style="max-width: 480px;">
-
-@if (userId is null)
+@if (user is not null)
 {
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">Who are you?</h5>
-            <select class="form-select mb-3" @bind="selectedUserId">
-                <option value="0">-- select --</option>
-                @foreach (var u in users)
-                {
-                    <option value="@u.UserId">@u.Username</option>
-                }
-            </select>
-            <button class="btn btn-primary w-100"
-                    disabled="@(selectedUserId == 0)"
-                    @onclick="ConfirmIdentity">Continue</button>
-        </div>
-    </div>
+    <h1>Hello, @user.DisplayName!</h1>
 }
 else
 {
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">Send a message</h5>
-            <p class="text-muted small">Signed in as <strong>@currentUsername</strong></p>
-
-            <label class="form-label">To</label>
-            <select class="form-select mb-3" @bind="toUserId">
-                <option value="0">-- select recipient --</option>
-                @foreach (var u in users.Where(u => u.UserId != userId))
-                {
-                    <option value="@u.UserId">@u.Username</option>
-                }
-            </select>
-
-            <label class="form-label">Message</label>
-            <input class="form-control mb-3" @bind="messageText" placeholder="Type a message..." />
-
-            <button class="btn btn-primary w-100"
-                    disabled="@(toUserId == 0 || string.IsNullOrWhiteSpace(messageText) || sending)"
-                    @onclick="SendMessage">
-                @(sending ? "Sending..." : "Send")
-            </button>
-
-            @if (status is not null)
-            {
-                <div class="alert @statusClass mt-3 mb-0 py-2">@status</div>
-            }
-        </div>
-    </div>
-
-    <button class="btn btn-link btn-sm mt-2 text-muted" @onclick="SignOut">Sign out</button>
+    <p>Loading...</p>
 }
 
-</div>
-
 @code {
-    private const string VapidKey = "BIQ_GIRHbdP0u3vX9-vvmwujuaXZivRgfkdvpAI3PshpeeUpee3k35dNbw9LZsWhYGWBD7Ey5885GtwU7haHo88";
-
-    private List<User> users = [];
-    private int? userId;
-    private string? currentUsername;
-    private int selectedUserId;
-    private int toUserId;
-    private string messageText = "";
-    private bool sending;
-    private string? status;
-    private string statusClass = "alert-success";
-
-    private IJSObjectReference? pushModule;
+    User? user;
 
     protected override async Task OnInitializedAsync()
     {
-        users = await ApiService.GetUsersAsync() ?? [];
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender) return;
-
-        pushModule = await JS.InvokeAsync<IJSObjectReference>("import", "./push.js");
-
-        var stored = await JS.InvokeAsync<string?>("localStorage.getItem", "userId");
-        if (int.TryParse(stored, out var id) && users.Any(u => u.UserId == id))
-        {
-            userId = id;
-            currentUsername = users.First(u => u.UserId == id).Username;
-            StateHasChanged();
-            await RegisterFcmToken();
-        }
-    }
-
-    private async Task ConfirmIdentity()
-    {
-        if (selectedUserId == 0) return;
-        userId = selectedUserId;
-        currentUsername = users.First(u => u.UserId == userId).Username;
-        await JS.InvokeVoidAsync("localStorage.setItem", "userId", userId.ToString());
-        await RegisterFcmToken();
-    }
-
-    private async Task RegisterFcmToken()
-    {
-        try
-        {
-            var token = await pushModule!.InvokeAsync<string?>("requestPermissionAndGetToken", VapidKey);
-            if (token is not null)
-                await ApiService.RegisterTokenAsync(userId!.Value, token);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"FCM token registration failed: {ex.Message}");
-        }
-    }
-
-    private async Task SendMessage()
-    {
-        sending = true;
-        status = null;
-        StateHasChanged();
-
-        var ok = await ApiService.SendMessageAsync(userId!.Value, toUserId, messageText);
-
-        if (ok)
-        {
-            status = "Sent!";
-            statusClass = "alert-success";
-            messageText = "";
-            toUserId = 0;
-        }
-        else
-        {
-            status = "Failed to send. Try again.";
-            statusClass = "alert-danger";
-        }
-
-        sending = false;
-    }
-
-    private async Task SignOut()
-    {
-        await JS.InvokeVoidAsync("localStorage.removeItem", "userId");
-        userId = null;
-        currentUsername = null;
-        selectedUserId = 0;
-        status = null;
+        user = await Api.GetCurrentUserAsync();
+        if (user is null)
+            Navigation.NavigateTo("/onboarding", replace: true);
     }
 }
