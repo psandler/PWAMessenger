@@ -1,10 +1,11 @@
+using Polecat;
 using Microsoft.EntityFrameworkCore;
 using PWAMessenger.Api.Data;
 using PWAMessenger.Api.Features.RegisterUser;
 
 namespace PWAMessenger.Api.Features.GrantNotificationPermission;
 
-public class GrantNotificationPermissionHandler(AppDbContext db /*, IDocumentSession session — uncomment when Polecat is installed */)
+public class GrantNotificationPermissionHandler(AppDbContext db, IDocumentSession session)
 {
     public async Task<IResult> HandleAsync(string auth0Id, GrantNotificationPermissionCommand command, CancellationToken ct = default)
     {
@@ -13,9 +14,8 @@ public class GrantNotificationPermissionHandler(AppDbContext db /*, IDocumentSes
 
         var @event = new FcmTokenRegistered(auth0Id, command.FcmToken);
 
-        // TODO: Append to Polecat stream once package is installed
-        // session.Events.Append(RegisterUserHandler.StreamId(auth0Id), @event);
-        // await session.SaveChangesAsync(ct);
+        session.Events.Append(RegisterUserHandler.StreamId(auth0Id), @event);
+        await session.SaveChangesAsync(ct);
 
         await new FcmTokenRegisteredProjection().ProjectAsync(@event, db, ct);
 

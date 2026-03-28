@@ -1,4 +1,5 @@
 using FirebaseAdmin;
+using Polecat;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -21,9 +22,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// TODO: Uncomment once Polecat package is installed (dotnet add package Polecat)
-// builder.Services.AddPolecat(options =>
-//     options.Connection(builder.Configuration.GetConnectionString("DefaultConnection")!));
+builder.Services.AddPolecat(builder.Configuration.GetConnectionString("DefaultConnection")!);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
