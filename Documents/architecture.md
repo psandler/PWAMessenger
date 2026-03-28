@@ -72,6 +72,7 @@ State is never updated in place. Everything that happens is recorded as an immut
 |---|---|
 | Invite user to system | `UserInvited` |
 | User registers (first login) | `UserRegistered` |
+| Device notification token stored | `FcmTokenRegistered` |
 | Send a direct message | `MessageSent` |
 | Create a match | `MatchCreated` |
 | Invite a player to a match | `PlayerInvited` |
@@ -151,7 +152,7 @@ InvitedUsers
   InvitedAt      DATETIME2 NOT NULL DEFAULT GETUTCDATE()
   InvitedBy      INT NULL REFERENCES Users(UserId)   -- null for seed/admin invites
 
--- Push notification tokens (EF-managed, upserted on each login)
+-- Push notification tokens (EF read model, written by FcmTokenRegistered projection)
 FcmTokens
   TokenId       INT PRIMARY KEY IDENTITY
   UserId        INT NOT NULL REFERENCES Users(UserId)
