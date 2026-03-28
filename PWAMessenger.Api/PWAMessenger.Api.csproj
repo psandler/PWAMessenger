@@ -9,9 +9,9 @@
 
   <ItemGroup>
     <PackageReference Include="FirebaseAdmin" Version="3.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.3" />
-    
     <!-- Check https://github.com/JasperFx/polecat for current version before adding -->
   </ItemGroup>
 

@@ -9,7 +9,8 @@
       "WebFetch(domain:martendb.io)",
       "WebFetch(domain:polecat.netlify.app)",
       "WebSearch",
-      "WebFetch(domain:jeremydmiller.com)"
+      "WebFetch(domain:jeremydmiller.com)",
+      "WebFetch(domain:auth0.com)"
     ]
   }
 }

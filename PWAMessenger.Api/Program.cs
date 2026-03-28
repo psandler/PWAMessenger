@@ -1,11 +1,15 @@
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using PWAMessenger.Api.Data;
+using PWAMessenger.Api.Features.GrantNotificationPermission;
+using PWAMessenger.Api.Features.Login;
+using PWAMessenger.Api.Features.RegisterUser;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddCors(options =>
@@ -17,15 +21,29 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// TODO: Register Polecat once the NuGet package is added
+// TODO: Uncomment once Polecat package is installed (dotnet add package Polecat)
 // builder.Services.AddPolecat(options =>
 //     options.Connection(builder.Configuration.GetConnectionString("DefaultConnection")!));
 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = $"https://{builder.Configuration["Auth0:Domain"]}";
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidAudience = builder.Configuration["Auth0:Audience"],
+            ValidIssuer = $"https://{builder.Configuration["Auth0:Domain"]}"
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+builder.Services.AddScoped<LoginHandler>();
+builder.Services.AddScoped<RegisterUserHandler>();
+builder.Services.AddScoped<GrantNotificationPermissionHandler>();
+
 using var credStream = File.OpenRead(builder.Configuration["Firebase:CredentialPath"]!);
-FirebaseApp.Create(new AppOptions
-{
-    Credential = GoogleCredential.FromStream(credStream)
-});
+FirebaseApp.Create(new AppOptions { Credential = GoogleCredential.FromStream(credStream) });
 
 var app = builder.Build();
 
@@ -34,6 +52,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 app.UseHttpsRedirection();
-app.MapControllers();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapLoginEndpoints();
+app.MapRegisterUserEndpoints();
+app.MapGrantNotificationPermissionEndpoints();
 
 app.Run();

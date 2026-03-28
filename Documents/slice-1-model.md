@@ -43,4 +43,39 @@ User opened the app. They entered their phone number. They were redirected to Au
 
 ## Given / When / Then
 
-*To be completed.*
+**Test 1 — RegisterUserCommand**
+- **Given:** InvitedUsers contains a record with a PhoneNumber matching the one encoded in Auth0Id
+- **When:** `RegisterUserCommand(Auth0Id, DisplayName)`
+- **Then:** `UserRegistered(Auth0Id, DisplayName, InvitedUserId)` is appended to the stream
+
+**Test 2 — GrantNotificationPermissionCommand**
+- **Given:** `UserRegistered` has been appended for this Auth0Id
+- **When:** `GrantNotificationPermissionCommand(Auth0Id, FCMToken)`
+- **Then:** `FcmTokenRegistered(Auth0Id, FCMToken)` is appended to the stream
+
+**Test 3 — LoginCommand (happy path)**
+- **Given:** InvitedUsers contains PhoneNumber
+- **When:** `LoginCommand(PhoneNumber)`
+- **Then:** Auth0 flow is initiated — no event appended
+
+---
+
+## Alternate Paths
+
+**Rejected login — phone number not in InvitedUsers**
+- **Given:** InvitedUsers does NOT contain PhoneNumber
+- **When:** `LoginCommand(PhoneNumber)`
+- **Then:** Request is rejected; Auth0 is never contacted; user sees an error
+
+**Returning user — re-authentication (new session or new device)**
+- Same as happy path through Auth0
+- App receives JWT, detects Users record already exists for Auth0Id → skips onboarding
+- If new device: `GrantNotificationPermissionCommand` fires → `FcmTokenRegistered` appended (additional token for this user)
+- If same device: FCM token may be unchanged; upsert is a no-op
+- No `UserRegistered` event — that only fires once, on first login
+
+**Notification permission denied**
+- `UserRegistered` fires normally
+- `GrantNotificationPermissionCommand` is never sent — no event, no FcmTokens record created
+- User lands on main page; app reads `Notification.permission` from the browser if it needs to show a "enable notifications" prompt
+- Absence of FcmTokens record is the implicit signal; no explicit event needed
