@@ -88,6 +88,15 @@ Current state is derived by replaying events. Read models (projections) are buil
 ### Event Modeling
 The design methodology used to plan the system before writing code. Events, commands, and read models are laid out on a timeline — what triggers what, what each user sees at each step. This is done as a design artifact before any slice is implemented.
 
+**No code is written for a slice until its model is agreed on.**
+
+#### Principles applied here
+
+- **Information flow** — every field in a command must be traceable to a read model that displayed it to the user. If the user can't see a piece of data, they can't act on it.
+- **Completeness** — every event must be consumed by at least one projection or automation. Every read model must be populated by at least one event. No orphaned projections; no unhandled events.
+- **Testability** — Given/When/Then test cases fall directly out of the model. Given this read model state, when this command is submitted, then these events are appended.
+- **Gap detection** — working through the model surfaces missing events, missing read models, and broken flows before any code is written.
+
 Reference: [Event Modeling — Adam Dymitruk](https://eventmodeling.org/)
 
 ### Polecat
