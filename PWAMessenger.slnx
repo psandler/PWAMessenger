@@ -12,4 +12,5 @@
   </Folder>
   <Project Path="PWAMessenger.Api/PWAMessenger.Api.csproj" />
   <Project Path="PWAMessenger.Client/PWAMessenger.Client.csproj" />
+  <Project Path="PWAMessenger.Tests/PWAMessenger.Tests.csproj" />
 </Solution>

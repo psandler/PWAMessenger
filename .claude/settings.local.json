@@ -13,7 +13,10 @@
       "WebFetch(domain:auth0.com)",
       "Bash(gh api:*)",
       "Bash(gh search:*)",
-      "Bash(grep -r \"ProjectionLifecycle\\\\|Lifecycle\" C:Userspsand.nugetpackagesjasperfx.events --include=*.xml -l)"
+      "Bash(grep -r \"ProjectionLifecycle\\\\|Lifecycle\" C:Userspsand.nugetpackagesjasperfx.events --include=*.xml -l)",
+      "Bash(\"C:\\\\projects\\\\PWAMessenger\\\\PWAMessenger.Api\\\\Program.cs\")",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet test:*)"
     ]
   }
 }

@@ -55,8 +55,12 @@ builder.Services.AddScoped<LoginHandler>();
 builder.Services.AddScoped<RegisterUserHandler>();
 builder.Services.AddScoped<GrantNotificationPermissionHandler>();
 
-using var credStream = File.OpenRead(builder.Configuration["Firebase:CredentialPath"]!);
-FirebaseApp.Create(new AppOptions { Credential = GoogleCredential.FromStream(credStream) });
+var credPath = builder.Configuration["Firebase:CredentialPath"];
+if (!string.IsNullOrEmpty(credPath) && FirebaseApp.DefaultInstance == null)
+{
+    using var credStream = File.OpenRead(credPath);
+    FirebaseApp.Create(new AppOptions { Credential = GoogleCredential.FromStream(credStream) });
+}
 
 var app = builder.Build();
 
@@ -73,3 +77,5 @@ app.MapRegisterUserEndpoints();
 app.MapGrantNotificationPermissionEndpoints();
 
 app.Run();
+
+public partial class Program { }
