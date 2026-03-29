@@ -11,6 +11,7 @@ public class ApiService(HttpClient http)
     {
         var response = await http.GetAsync("api/users/me");
         if (response.StatusCode == HttpStatusCode.NotFound) return null;
+        if (response.StatusCode == HttpStatusCode.Unauthorized) throw new UnauthorizedAccessException();
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<User>();
     }

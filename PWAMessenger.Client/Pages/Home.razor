@@ -17,8 +17,15 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        user = await Api.GetCurrentUserAsync();
-        if (user is null)
-            Navigation.NavigateTo("/onboarding", replace: true);
+        try
+        {
+            user = await Api.GetCurrentUserAsync();
+            if (user is null)
+                Navigation.NavigateTo("/onboarding", replace: true);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Navigation.NavigateToLogin("authentication/login");
+        }
     }
 }

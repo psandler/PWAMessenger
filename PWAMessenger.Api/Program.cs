@@ -8,6 +8,7 @@ using PWAMessenger.Api.Data;
 using PWAMessenger.Api.Features.GrantNotificationPermission;
 using PWAMessenger.Api.Features.Login;
 using PWAMessenger.Api.Features.RegisterUser;
+using JasperFx;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +23,11 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddPolecat(builder.Configuration.GetConnectionString("DefaultConnection")!);
+builder.Services.AddPolecat(opts =>
+{
+    opts.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
+    opts.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
+}).ApplyAllDatabaseChangesOnStartup();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
