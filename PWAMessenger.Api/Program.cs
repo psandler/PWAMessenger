@@ -1,14 +1,17 @@
 using FirebaseAdmin;
-using Polecat;
 using Google.Apis.Auth.OAuth2;
+using JasperFx;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Polecat;
+using Polecat.EntityFrameworkCore;
 using PWAMessenger.Api.Data;
 using PWAMessenger.Api.Features.GrantNotificationPermission;
 using PWAMessenger.Api.Features.Login;
 using PWAMessenger.Api.Features.RegisterUser;
-using JasperFx;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +30,13 @@ builder.Services.AddPolecat(opts =>
 {
     opts.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
     opts.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-}).ApplyAllDatabaseChangesOnStartup();
+    opts.Projections.Add<FcmTokenRegisteredProjection, AppDbContext>(
+        opts,
+        new FcmTokenRegisteredProjection(),
+        ProjectionLifecycle.Async);
+})
+.AddAsyncDaemon(DaemonMode.Solo)
+.ApplyAllDatabaseChangesOnStartup();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

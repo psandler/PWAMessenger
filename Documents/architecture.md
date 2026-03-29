@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A lightweight invite app for paddle sports — tennis, pickleball, platform paddle, etc. Core workflows:
+A lightweight invite app for racket sports — tennis, pickleball, platform tennis, etc. Core workflows:
 
 - **Create a match/event** — sport, time, location, number of players needed
 - **Invite players** — invite registered users to a specific match (distinct from inviting someone to join the system)
@@ -29,7 +29,9 @@ The app is intentionally scoped. It is not a scheduling tool, a league manager, 
 4. Auth0 sends a magic link or one-time code to the email address. Auth0 handles delivery natively — no external email provider required.
 5. User clicks the link or enters the code. Auth0 issues a JWT.
 6. The JWT `sub` claim becomes the user's permanent Auth0Id in the system. The `email` claim carries the email address.
-7. On first login, the user is prompted to enter a display name. A `Users` record is then created. On subsequent logins, the FCM token is refreshed and the user goes directly to the app.
+7. On first login, the user is prompted to enter a display name. A `Users` record is then created.
+8. The user is then prompted to allow notifications. If granted, the browser issues an FCM token which is stored in `FcmTokens`. The user may skip this step.
+9. On subsequent logins, the user goes directly to the app. The FCM token is refreshed in the background if notification permission was previously granted.
 
 ### InvitedUsers Table
 Acts as a gatekeeper. An email address must exist here before any Auth0 interaction is permitted. The invite and contacts flow that populates this table is defined separately.
@@ -42,7 +44,7 @@ Users enter a preferred display name during onboarding (first login). This is wh
 ## Messaging
 
 ### Infrastructure
-Firebase Cloud Messaging (FCM) handles all push notification delivery. This infrastructure is already implemented and is not changing.
+Firebase Cloud Messaging (FCM) handles all push notification delivery. This infrastructure is already implemented.
 
 ### Flow
 1. On login, the client calls `getToken()` (Firebase JS SDK) to obtain an FCM registration token.
@@ -83,8 +85,8 @@ State is never updated in place. Everything that happens is recorded as an immut
 
 Current state is derived by replaying events. Read models (projections) are built from the stream and stored in SQL Server tables managed by EF Core, then queried via EF Core.
 
-#### A Note on MessageSent Evolution
-`MessageSent` is intentionally minimal at first — direct user-to-user messages. It will likely need to evolve as the app grows (messages in the context of a match, group messages, etc.). Polecat supports event upcasting, which allows old event shapes to be transformed to new ones during replay without rewriting history. When `MessageSent` needs to change, the path is to introduce a new event type or an upcaster rather than modifying the existing event.
+#### Event Evolution
+Events are immutable once written, but their shape will need to evolve as the app grows. Polecat supports event upcasting, which allows old event shapes to be transformed to new ones during replay without rewriting history. When an event needs to change, the path is to introduce a new event type or an upcaster rather than modifying the existing event definition.
 
 ### Event Modeling
 The design methodology used to plan the system before writing code. Events, commands, and read models are laid out on a timeline — what triggers what, what each user sees at each step. This is done as a design artifact before any slice is implemented.
@@ -110,8 +112,30 @@ The event store and document database, running on SQL Server. Polecat is JasperF
 Reference: [Polecat — polecat.netlify.app](https://polecat.netlify.app/)
 GitHub: [github.com/JasperFx/polecat](https://github.com/JasperFx/polecat)
 
+### Inline vs Async Projections
+
+Not all projections belong in the async daemon. The rule:
+
+**Inline projections** — called synchronously within the command handler, before `SaveChangesAsync`. The event write and the projection write succeed or fail together. Use when:
+- The read model participates in write-time validation (e.g. unique constraint on `DisplayName` — a duplicate should fail the command)
+- The read model is read immediately after the write (e.g. `GET /api/users/me` called right after registration)
+- Idempotency checks depend on the projection being current
+
+Example: `UserRegistered → Users table` — inline, because the `Users` row is used to check "already registered" on the next call, and a unique constraint failure should abort the write.
+
+**Async daemon projections** — processed by the Polecat daemon after the event is committed. Eventual consistency is acceptable. Use when:
+- The projection is a query-only read model not needed during the write
+- The projection is a side effect (FCM notification send)
+- A projection failure should not roll back the command
+
+Example: `FcmTokenRegistered → FcmTokens table` — async, because the FCM token just needs to be eventually available for future notification sends; a delay or failure does not affect the command result.
+
+**Package:** async projections that write to EF Core tables use `Polecat.EntityFrameworkCore` and extend `EfCoreEventProjection<TDbContext>`. Registered via `opts.Projections.Add<TProjection, TDbContext>(opts, instance, ProjectionLifecycle.Async)` with `.AddAsyncDaemon(DaemonMode.Solo)` chained on `AddPolecat`.
+
 ### EF Core — Read Model Layer
 Entity Framework Core manages the relational read model tables (Users, InvitedUsers, FcmTokens) via code-first migrations. Polecat's async projection handlers inject `AppDbContext` to write projection state. All read queries go through EF Core.
+
+> Projecting events onto a relational schema (rather than a document store) is not the default pattern in most event sourcing frameworks, but we have chosen it here and Polecat's `Polecat.EntityFrameworkCore` package supports it as a first-class option.
 
 The two layers are complementary:
 - **Polecat** owns event streams (its own internal tables, Polecat-managed schema)

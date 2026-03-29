@@ -22,3 +22,11 @@ export async function requestPermissionAndGetToken(vapidKey) {
     const registration = await navigator.serviceWorker.ready;
     return await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
 }
+
+// Silent refresh — only gets the token if permission is already granted.
+// Used on returning user login to keep the FCM token current without prompting.
+export async function getTokenIfPermitted(vapidKey) {
+    if (Notification.permission !== 'granted') return null;
+    const registration = await navigator.serviceWorker.ready;
+    return await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
+}

@@ -13,7 +13,7 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.5" />
     <PackageReference Include="Polecat" Version="1.4.0" />
-    <!-- Check https://github.com/JasperFx/polecat for current version before adding -->
+    <PackageReference Include="Polecat.EntityFrameworkCore" Version="1.4.0" />
   </ItemGroup>
 
   <ItemGroup>

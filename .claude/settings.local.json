@@ -11,7 +11,9 @@
       "WebSearch",
       "WebFetch(domain:jeremydmiller.com)",
       "WebFetch(domain:auth0.com)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "Bash(gh search:*)",
+      "Bash(grep -r \"ProjectionLifecycle\\\\|Lifecycle\" C:Userspsand.nugetpackagesjasperfx.events --include=*.xml -l)"
     ]
   }
 }

@@ -17,8 +17,6 @@ public class GrantNotificationPermissionHandler(AppDbContext db, IDocumentSessio
         session.Events.Append(RegisterUserHandler.StreamId(auth0Id), @event);
         await session.SaveChangesAsync(ct);
 
-        await new FcmTokenRegisteredProjection().ProjectAsync(@event, db, ct);
-
         return Results.Ok();
     }
 }
