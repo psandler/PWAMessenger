@@ -51,6 +51,8 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                     ValidateLifetime = false,
                     IssuerSigningKey = SigningKey,
                 };
+                // Disable OIDC discovery — prevents 60s BackchannelTimeout on first authenticated request.
+                options.ConfigurationManager = null;
             });
         });
     }
