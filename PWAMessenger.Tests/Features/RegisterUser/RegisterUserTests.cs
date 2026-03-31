@@ -78,6 +78,20 @@ public class RegisterUserTests(ApiFactory factory) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task NotInvited_Returns403()
+    {
+        // Given — authenticated but email not in InvitedUsers
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", factory.GenerateToken(TestAuth0Id, TestEmail));
+
+        // When
+        var response = await _client.PostAsJsonAsync("api/users/register", new { DisplayName = "Test User" });
+
+        // Then
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetCurrentUser_BeforeRegistration_Returns404()
     {
         // Given — user is authenticated but has no Users row

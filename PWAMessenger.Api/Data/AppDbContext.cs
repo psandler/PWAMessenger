@@ -36,6 +36,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<FcmToken>(e =>
         {
             e.HasKey(f => f.TokenId);
+            e.HasIndex(f => new { f.UserId, f.Token }).IsUnique();
             e.Property(f => f.Token).HasMaxLength(500).IsRequired();
             e.Property(f => f.RegisteredAt).HasDefaultValueSql("GETUTCDATE()");
             e.Property(f => f.LastSeenAt).HasDefaultValueSql("GETUTCDATE()");
