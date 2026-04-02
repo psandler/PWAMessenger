@@ -4,17 +4,17 @@ The goal is working software from the earliest possible point. The approach is a
 
 ---
 
-## Slice 1 — Login and Exist
+## Slice 1 — Login and Exist ✓ Complete
 
 Everything needed for a user to authenticate and be reachable.
 
-- Seed `InvitedUsers` directly in the database (your phone number, any test devices). This is not a hack — it is the legitimate initial state of an invite-only system, and these seed entries will remain as admin/owner accounts.
-- Auth0 SMS passwordless login
+- Seed `InvitedUsers` directly in the database (your email address, any test devices). This is not a hack — it is the legitimate initial state of an invite-only system, and these seed entries will remain as admin/owner accounts.
+- Auth0 email passwordless login
 - Pre-auth gate: check `InvitedUsers` before handing off to Auth0
 - `UserRegistered` event → creates the Users read model record with display name
-- FCM token registered on login via existing infrastructure
+- `FcmTokenRegistered` event → stores device push token via async Polecat projection
 
-**Deliverable:** A real user can log in with their phone number, set a display name, and be reachable by push notification.
+**Deliverable:** A real user can log in with their email address, set a display name, and be reachable by push notification.
 
 ---
 

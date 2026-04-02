@@ -16,12 +16,12 @@ Auth0 provides email passwordless authentication. Auth0 handles email delivery n
 1. In Auth0 dashboard → Applications → Create Application.
 2. Choose **Single Page Application**.
 3. Name it (e.g. `PWAMessenger Client`).
-4. Note the **Domain** and **Client ID** — these go in User Secrets (see §1d).
+4. Note the **Domain** and **Client ID** — these go in User Secrets (see §1e).
 
 ### 1c. Enable Email Passwordless Connection
 1. Auth0 dashboard → Authentication → Passwordless → Email.
 2. Enable it.
-3. Choose **Magic Link** or **One-Time Code** — either works. Magic Link is smoother UX (one click in email); One-Time Code matches the original SMS OTP experience.
+3. Choose **Magic Link** or **One-Time Code** — either works. Magic Link is smoother UX (one click in email); One-Time Code is quicker to enter.
 4. No external provider setup required — Auth0 delivers the email.
 
 ### 1d. Configure Callback URLs
@@ -30,22 +30,42 @@ In the Auth0 application settings, set:
 - **Allowed Logout URLs:** `https://localhost:7056, https://pwamessenger.pages.dev`
 - **Allowed Web Origins:** `https://localhost:7056, https://pwamessenger.pages.dev`
 
+If using Dev Tunnels for local API testing, add the tunnel URL to each list as well.
+
 ### 1e. Add Auth0 Credentials to User Secrets
 In `PWAMessenger.Api`, add to user secrets:
 ```json
 {
   "Auth0:Domain": "your-tenant.auth0.com",
-  "Auth0:Audience": "https://your-tenant.auth0.com/api/v2/"
+  "Auth0:Audience": "pwamessenger"
 }
 ```
 
-In `PWAMessenger.Client`, add to user secrets (or `appsettings.Development.json`):
+In `PWAMessenger.Client` (`appsettings.Development.json`):
 ```json
 {
   "Auth0:Domain": "your-tenant.auth0.com",
-  "Auth0:ClientId": "your-client-id"
+  "Auth0:ClientId": "your-client-id",
+  "Auth0:Audience": "pwamessenger",
+  "Firebase:VapidKey": "your-vapid-key"
 }
 ```
+
+### 1f. Create Auth0 API
+In Auth0 dashboard → Applications → APIs → Create API:
+- **Name:** PWAMessenger
+- **Identifier (audience):** `pwamessenger`
+
+### 1g. Add Post Login Action to inject email claim
+Auth0 does not include `email` in access tokens by default. Add a Post Login Action:
+```javascript
+exports.onExecutePostLogin = async (event, api) => {
+  if (event.authorization) {
+    api.accessToken.setCustomClaim('email', event.user.email);
+  }
+};
+```
+Without this, user registration will fail (the API cannot identify the user's email from the JWT).
 
 ---
 
@@ -57,15 +77,13 @@ Using SSMS or sqlcmd:
 CREATE DATABASE PWAMessenger;
 ```
 
-### 2b. Run EF Core Migrations
-Once the code is scaffolded (already done), create and apply the initial migration:
+### 2b. Apply EF Core Migrations
+Migration files are already in the repo. Just apply them:
 ```bash
-# From the repo root
-dotnet ef migrations add InitialSchema --project PWAMessenger.Api
 dotnet ef database update --project PWAMessenger.Api
 ```
 
-This creates the `Users`, `InvitedUsers`, and `FcmTokens` tables.
+This creates the `Users`, `InvitedUsers`, and `FcmTokens` tables. Polecat creates its own tables (`pc_*`) automatically on first startup.
 
 ### 2c. Seed Your Email into InvitedUsers
 After migrations run, seed your email address so you can log in:
@@ -77,23 +95,16 @@ Use the exact email address you will authenticate with via Auth0.
 
 ---
 
-## 3. Polecat (NuGet Package)
+## 3. Polecat
 
-Polecat is brand new (announced March 2026) and actively evolving. Verify the current NuGet package before restoring:
+Polecat 1.4.0 is already added to the project and the integration patterns are verified. No additional setup required — the `pc_*` tables are created automatically on first API startup via `ApplyAllDatabaseChangesOnStartup()`.
 
-```bash
-dotnet add package Polecat --project PWAMessenger.Api
-```
-
-Check the [Polecat GitHub](https://github.com/JasperFx/polecat) for the latest version and any breaking changes in the API. The `AddPolecat()` registration in `Program.cs` may need to be adjusted as the API stabilizes.
-
-Note: Polecat requires **SQL Server 2025** for its native JSON type support. If your SQL Server is an older version, check the Polecat docs for compatibility notes.
+Reference: [Polecat GitHub](https://github.com/JasperFx/polecat)
 
 ---
 
 ## 4. Restore and Build
 
-Once Polecat is added (§3):
 ```bash
 dotnet restore
 dotnet build
@@ -101,7 +112,28 @@ dotnet build
 
 ---
 
-## 5. Deploy Checklist Reminder
+## 5. API Tunnel (Dev Tunnels)
 
-When the API tunnel URL changes (Dev Tunnels rotates):
-- Update the `API_BASE_URL` GitHub Actions secret with the new HTTPS tunnel URL.
+The API must be reachable over HTTPS from the deployed Cloudflare Pages client. Use the `devtunnel` CLI for a **persistent URL** that survives restarts.
+
+### One-time setup
+
+```bash
+devtunnel user login
+devtunnel create pwamessenger-api --allow-anonymous
+devtunnel port create pwamessenger-api -p 7102 --protocol https
+```
+
+After creation, run `devtunnel show pwamessenger-api` to get the stable URL — it will look like `https://pwamessenger-api-7102.<region>.devtunnels.ms`. Set this as the `API_BASE_URL` GitHub Actions secret. It will not change unless you delete and recreate the tunnel.
+
+Also add the tunnel URL to Auth0's **Allowed Callback URLs**, **Allowed Logout URLs**, and **Allowed Web Origins** (see §1d).
+
+### Every time you want to expose the API
+
+```bash
+devtunnel host pwamessenger-api
+```
+
+Stop with Ctrl+C. The tunnel URL remains the same on the next start.
+
+> **Do not use** `devtunnel host -p 7102 --allow-anonymous` — that creates a temporary tunnel with a new URL every time, requiring you to update the GitHub secret and Auth0 settings on every restart.
