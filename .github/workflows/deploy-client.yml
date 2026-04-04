@@ -21,8 +21,8 @@ jobs:
 
       - name: Inject API base URL
         run: |
-          echo '{ "ApiBaseUrl": "${{ secrets.API_BASE_URL }}" }' \
-            > publish/wwwroot/appsettings.json
+          jq --arg url "${{ secrets.API_BASE_URL }}" '. + {"ApiBaseUrl": $url}' \
+            publish/wwwroot/appsettings.json > tmp.json && mv tmp.json publish/wwwroot/appsettings.json
 
       - name: Create stable dotnet.js alias (.NET 10 fingerprints runtime files but blazor.webassembly.js imports the stable name)
         run: |
