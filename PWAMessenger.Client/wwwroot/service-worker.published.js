@@ -101,7 +101,10 @@ async function onFetch(event) {
             cachedResponse = await cache.match(request);
         }
 
-        return cachedResponse || fetch(event.request);
+        // Use `request` not `event.request`: for navigation requests shouldServeIndexHtml
+        // rewrites request to 'index.html'. Falling back to event.request would fetch the
+        // original navigation URL with redirect:manual, producing an opaque redirect and ERR_FAILED.
+        return cachedResponse || fetch(request);
     } catch {
         // Cache lookup failed — fall back to network so a broken cache never produces ERR_FAILED.
         return fetch(event.request);
