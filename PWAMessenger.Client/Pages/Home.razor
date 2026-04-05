@@ -4,6 +4,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 @inject IConfiguration Config
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 
 @if (user is not null)
 {
@@ -30,6 +31,10 @@ else
 
             // Returning user — silently refresh FCM token if permission already granted.
             await RefreshFcmTokenAsync();
+        }
+        catch (AccessTokenNotAvailableException ex)
+        {
+            ex.Redirect();
         }
         catch (UnauthorizedAccessException)
         {

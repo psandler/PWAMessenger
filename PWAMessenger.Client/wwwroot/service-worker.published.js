@@ -99,9 +99,14 @@ async function onFetch(event) {
             const shouldServeIndexHtml = event.request.mode === 'navigate'
                 && !manifestUrlList.some(url => url === event.request.url);
 
-            request = shouldServeIndexHtml ? 'index.html' : event.request;
+            // Use cache key 'index.html' but fall back to fetching '/' on cache miss.
+            // Cloudflare redirects '/index.html' → '/', which produces a redirected response
+            // that the browser rejects for navigate fetches (redirect:manual). Fetching '/'
+            // returns 200 directly with no redirect.
+            request = shouldServeIndexHtml ? new Request(self.origin + '/') : event.request;
+            const cacheKey = shouldServeIndexHtml ? 'index.html' : event.request;
             const cache = await caches.open(cacheName);
-            cachedResponse = await cache.match(request);
+            cachedResponse = await cache.match(cacheKey);
         }
 
         if (cachedResponse) return cachedResponse;
