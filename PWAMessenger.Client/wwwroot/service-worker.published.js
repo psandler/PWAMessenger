@@ -54,29 +54,13 @@ self.importScripts('./service-worker-assets.js');
 self.addEventListener('install', event => event.waitUntil(onInstall(event)));
 self.addEventListener('activate', event => event.waitUntil(onActivate(event)));
 self.addEventListener('fetch', event => {
-    const url = new URL(event.request.url);
-
-    // Never intercept /authentication/* routes. Auth0 OIDC callbacks must reach
-    // the app without SW interference. Not calling event.respondWith() lets the
-    // browser fetch from Cloudflare normally, which serves index.html as a clean
-    // 200 OK — no redirect, no redirect:manual rejection, no broken auth state.
-    if (url.pathname.startsWith('/authentication/')) return;
-
-    // Navigate requests (full page loads / refreshes) need special handling.
-    // Browser sets redirect:manual on navigate fetches, so fetch(event.request)
-    // will throw a network error if the server issues ANY redirect (e.g. / → /index.html
-    // on Cloudflare Pages). Always serve index.html for navigations — from cache if
-    // present, otherwise by fetching it directly with a fresh Request (no redirect:manual).
-    if (event.request.mode === 'navigate') {
-        event.respondWith(
-            caches.open(cacheName).then(cache =>
-                cache.match('index.html').then(cached =>
-                    cached || fetch(new Request(url.origin + '/index.html'))
-                )
-            )
-        );
-        return;
-    }
+    // Never intercept navigation requests (full page loads, refreshes, deep links).
+    // This app requires auth and a live API — there is no offline navigation story.
+    // Letting navigations go straight to the network means Cloudflare Pages always
+    // serves a fresh index.html with no redirect:manual issues, no stale cache,
+    // no broken auth callbacks. SW only caches static assets (JS, WASM, CSS, etc.)
+    // for fast subsequent loads.
+    if (event.request.mode === 'navigate') return;
 
     event.respondWith(onFetch(event));
 });
@@ -86,10 +70,6 @@ const cacheName = `${cacheNamePrefix}${self.assetsManifest.version}`;
 const offlineAssetsInclude = [ /\.dll$/, /\.pdb$/, /\.wasm/, /\.html/, /\.js$/, /\.json$/, /\.css$/, /\.woff$/, /\.png$/, /\.jpe?g$/, /\.gif$/, /\.ico$/, /\.blat$/, /\.dat$/, /\.webmanifest$/ ];
 const offlineAssetsExclude = [ /^service-worker\.js$/, /^appsettings.*\.json$/ ];
 
-// Replace with your base path if you are hosting on a subfolder. Ensure there is a trailing '/'.
-const base = "/";
-const baseUrl = new URL(base, self.origin);
-const manifestUrlList = self.assetsManifest.assets.map(asset => new URL(asset.url, baseUrl).href);
 
 async function onInstall(event) {
     console.info('Service worker: Install');
