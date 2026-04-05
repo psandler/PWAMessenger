@@ -89,6 +89,9 @@ async function onActivate(event) {
 async function onFetch(event) {
     try {
         let cachedResponse = null;
+        // Declare request here so it is in scope for the network fallback below.
+        let request = event.request;
+
         if (event.request.method === 'GET') {
             // For all navigation requests, try to serve index.html from cache,
             // unless that request is for an offline resource.
@@ -96,17 +99,28 @@ async function onFetch(event) {
             const shouldServeIndexHtml = event.request.mode === 'navigate'
                 && !manifestUrlList.some(url => url === event.request.url);
 
-            const request = shouldServeIndexHtml ? 'index.html' : event.request;
+            request = shouldServeIndexHtml ? 'index.html' : event.request;
             const cache = await caches.open(cacheName);
             cachedResponse = await cache.match(request);
         }
 
-        // Use `request` not `event.request`: for navigation requests shouldServeIndexHtml
-        // rewrites request to 'index.html'. Falling back to event.request would fetch the
-        // original navigation URL with redirect:manual, producing an opaque redirect and ERR_FAILED.
-        return cachedResponse || fetch(request);
+        if (cachedResponse) return cachedResponse;
+
+        // Navigation requests carry redirect:manual — the browser rejects a redirected response
+        // for a navigate fetch with ERR_FAILED. If the network response is a redirect (e.g.
+        // Cloudflare normalising /index.html → /), construct a clean response from the body
+        // so the redirect flag is stripped before handing it back to the browser.
+        const networkResponse = await fetch(request);
+        if (networkResponse.redirected) {
+            return new Response(networkResponse.body, {
+                status: networkResponse.status,
+                statusText: networkResponse.statusText,
+                headers: networkResponse.headers,
+            });
+        }
+        return networkResponse;
     } catch {
-        // Cache lookup failed — fall back to network so a broken cache never produces ERR_FAILED.
+        // Last resort — bypass the cache entirely and let the browser handle it.
         return fetch(event.request);
     }
 }
