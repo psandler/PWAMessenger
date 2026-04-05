@@ -54,11 +54,30 @@ self.importScripts('./service-worker-assets.js');
 self.addEventListener('install', event => event.waitUntil(onInstall(event)));
 self.addEventListener('activate', event => event.waitUntil(onActivate(event)));
 self.addEventListener('fetch', event => {
+    const url = new URL(event.request.url);
+
     // Never intercept /authentication/* routes. Auth0 OIDC callbacks must reach
     // the app without SW interference. Not calling event.respondWith() lets the
     // browser fetch from Cloudflare normally, which serves index.html as a clean
     // 200 OK — no redirect, no redirect:manual rejection, no broken auth state.
-    if (new URL(event.request.url).pathname.startsWith('/authentication/')) return;
+    if (url.pathname.startsWith('/authentication/')) return;
+
+    // Navigate requests (full page loads / refreshes) need special handling.
+    // Browser sets redirect:manual on navigate fetches, so fetch(event.request)
+    // will throw a network error if the server issues ANY redirect (e.g. / → /index.html
+    // on Cloudflare Pages). Always serve index.html for navigations — from cache if
+    // present, otherwise by fetching it directly with a fresh Request (no redirect:manual).
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            caches.open(cacheName).then(cache =>
+                cache.match('index.html').then(cached =>
+                    cached || fetch(new Request(url.origin + '/index.html'))
+                )
+            )
+        );
+        return;
+    }
+
     event.respondWith(onFetch(event));
 });
 
@@ -94,17 +113,11 @@ async function onActivate(event) {
 }
 
 async function onFetch(event) {
+    // Only called for non-navigate requests (assets, API calls, etc.)
     let cachedResponse = null;
     if (event.request.method === 'GET') {
-        // For all navigation requests, try to serve index.html from cache,
-        // unless that request is for an offline resource.
-        // If you need some URLs to be server-rendered, edit the following check to exclude those URLs
-        const shouldServeIndexHtml = event.request.mode === 'navigate'
-            && !manifestUrlList.some(url => url === event.request.url);
-
-        const request = shouldServeIndexHtml ? 'index.html' : event.request;
         const cache = await caches.open(cacheName);
-        cachedResponse = await cache.match(request);
+        cachedResponse = await cache.match(event.request);
     }
 
     return cachedResponse || fetch(event.request);
