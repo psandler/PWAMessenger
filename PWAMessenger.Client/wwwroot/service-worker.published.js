@@ -53,7 +53,14 @@ try {
 self.importScripts('./service-worker-assets.js');
 self.addEventListener('install', event => event.waitUntil(onInstall(event)));
 self.addEventListener('activate', event => event.waitUntil(onActivate(event)));
-self.addEventListener('fetch', event => event.respondWith(onFetch(event)));
+self.addEventListener('fetch', event => {
+    // Never intercept /authentication/* routes. Auth0 OIDC callbacks must reach
+    // the app without SW interference. Not calling event.respondWith() lets the
+    // browser fetch from Cloudflare normally, which serves index.html as a clean
+    // 200 OK — no redirect, no redirect:manual rejection, no broken auth state.
+    if (new URL(event.request.url).pathname.startsWith('/authentication/')) return;
+    event.respondWith(onFetch(event));
+});
 
 const cacheNamePrefix = 'offline-cache-';
 const cacheName = `${cacheNamePrefix}${self.assetsManifest.version}`;
@@ -87,45 +94,18 @@ async function onActivate(event) {
 }
 
 async function onFetch(event) {
-    try {
-        let cachedResponse = null;
-        // Declare request here so it is in scope for the network fallback below.
-        let request = event.request;
+    let cachedResponse = null;
+    if (event.request.method === 'GET') {
+        // For all navigation requests, try to serve index.html from cache,
+        // unless that request is for an offline resource.
+        // If you need some URLs to be server-rendered, edit the following check to exclude those URLs
+        const shouldServeIndexHtml = event.request.mode === 'navigate'
+            && !manifestUrlList.some(url => url === event.request.url);
 
-        if (event.request.method === 'GET') {
-            // For all navigation requests, try to serve index.html from cache,
-            // unless that request is for an offline resource.
-            // If you need some URLs to be server-rendered, edit the following check to exclude those URLs
-            const shouldServeIndexHtml = event.request.mode === 'navigate'
-                && !manifestUrlList.some(url => url === event.request.url);
-
-            // Use cache key 'index.html' but fall back to fetching '/' on cache miss.
-            // Cloudflare redirects '/index.html' → '/', which produces a redirected response
-            // that the browser rejects for navigate fetches (redirect:manual). Fetching '/'
-            // returns 200 directly with no redirect.
-            request = shouldServeIndexHtml ? new Request(self.origin + '/') : event.request;
-            const cacheKey = shouldServeIndexHtml ? 'index.html' : event.request;
-            const cache = await caches.open(cacheName);
-            cachedResponse = await cache.match(cacheKey);
-        }
-
-        if (cachedResponse) return cachedResponse;
-
-        // Navigation requests carry redirect:manual — the browser rejects a redirected response
-        // for a navigate fetch with ERR_FAILED. If the network response is a redirect (e.g.
-        // Cloudflare normalising /index.html → /), construct a clean response from the body
-        // so the redirect flag is stripped before handing it back to the browser.
-        const networkResponse = await fetch(request);
-        if (networkResponse.redirected) {
-            return new Response(networkResponse.body, {
-                status: networkResponse.status,
-                statusText: networkResponse.statusText,
-                headers: networkResponse.headers,
-            });
-        }
-        return networkResponse;
-    } catch {
-        // Last resort — bypass the cache entirely and let the browser handle it.
-        return fetch(event.request);
+        const request = shouldServeIndexHtml ? 'index.html' : event.request;
+        const cache = await caches.open(cacheName);
+        cachedResponse = await cache.match(request);
     }
+
+    return cachedResponse || fetch(event.request);
 }
