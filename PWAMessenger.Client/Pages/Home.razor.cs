@@ -1,0 +1,50 @@
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
+using Microsoft.JSInterop;
+using PWAMessenger.Client.Models;
+
+namespace PWAMessenger.Client.Pages;
+
+public partial class Home
+{
+    User? user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            user = await Api.GetCurrentUserAsync();
+            if (user is null)
+            {
+                Navigation.NavigateTo("/onboarding", replace: true);
+                return;
+            }
+
+            // Returning user — silently refresh FCM token if permission already granted.
+            await RefreshFcmTokenAsync();
+        }
+        catch (AccessTokenNotAvailableException ex)
+        {
+            ex.Redirect();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Navigation.NavigateToLogin("authentication/login");
+        }
+    }
+
+    async Task RefreshFcmTokenAsync()
+    {
+        try
+        {
+            var vapidKey = Config["Firebase:VapidKey"]!;
+            var pushModule = await JS.InvokeAsync<IJSObjectReference>("import", "./push.js");
+            var token = await pushModule.InvokeAsync<string?>("getTokenIfPermitted", vapidKey);
+            if (token is not null)
+                await Api.RegisterFcmTokenAsync(token);
+        }
+        catch
+        {
+            // Token refresh is best-effort — never block the home page on failure.
+        }
+    }
+}
