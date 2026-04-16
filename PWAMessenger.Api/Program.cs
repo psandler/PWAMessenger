@@ -9,9 +9,11 @@ using Microsoft.IdentityModel.Tokens;
 using Polecat;
 using Polecat.EntityFrameworkCore;
 using PWAMessenger.Api.Data;
+using PWAMessenger.Api.Features.GetUsers;
 using PWAMessenger.Api.Features.GrantNotificationPermission;
 using PWAMessenger.Api.Features.Login;
 using PWAMessenger.Api.Features.RegisterUser;
+using PWAMessenger.Api.Features.SendMessage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +36,10 @@ builder.Services.AddPolecat(opts =>
         opts,
         new FcmTokenRegisteredProjection(),
         ProjectionLifecycle.Async);
+    opts.Projections.Add<MessageSentProjection, AppDbContext>(
+        opts,
+        new MessageSentProjection(),
+        ProjectionLifecycle.Async);
 })
 .AddAsyncDaemon(DaemonMode.Solo)
 .ApplyAllDatabaseChangesOnStartup();
@@ -54,6 +60,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<LoginHandler>();
 builder.Services.AddScoped<RegisterUserHandler>();
 builder.Services.AddScoped<GrantNotificationPermissionHandler>();
+builder.Services.AddScoped<SendMessageHandler>();
 
 var credPath = builder.Configuration["Firebase:CredentialPath"];
 if (!string.IsNullOrEmpty(credPath) && FirebaseApp.DefaultInstance == null)
@@ -75,6 +82,8 @@ app.UseAuthorization();
 app.MapLoginEndpoints();
 app.MapRegisterUserEndpoints();
 app.MapGrantNotificationPermissionEndpoints();
+app.MapGetUsersEndpoints();
+app.MapSendMessageEndpoints();
 
 app.Run();
 

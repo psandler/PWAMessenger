@@ -26,4 +26,15 @@ public class ApiService(HttpClient http)
     {
         await http.PostAsJsonAsync("api/notifications/register", new { FcmToken = fcmToken });
     }
+
+    public async Task<List<UserSummary>> GetUsersAsync()
+    {
+        return await http.GetFromJsonAsync<List<UserSummary>>("api/users") ?? [];
+    }
+
+    public async Task<bool> SendMessageAsync(int recipientId, string body)
+    {
+        var response = await http.PostAsJsonAsync("api/messages/send", new { RecipientId = recipientId, Body = body });
+        return response.IsSuccessStatusCode;
+    }
 }

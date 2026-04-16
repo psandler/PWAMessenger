@@ -1,0 +1,45 @@
+@page "/send"
+@attribute [Authorize]
+@inject ApiService Api
+@inject NavigationManager Navigation
+
+<h2>Send a Message</h2>
+
+@if (users is null)
+{
+    <p>Loading...</p>
+}
+else if (users.Count == 0)
+{
+    <p>No other users are registered yet.</p>
+}
+else if (sent)
+{
+    <p>Sent!</p>
+    <button @onclick="Reset">Send another</button>
+}
+else
+{
+    <div>
+        <label>To:</label>
+        <select @bind="selectedUserId">
+            <option value="0">— select a recipient —</option>
+            @foreach (var user in users)
+            {
+                <option value="@user.UserId">@user.DisplayName</option>
+            }
+        </select>
+    </div>
+
+    <div>
+        <label>Message:</label>
+        <input @bind="body" placeholder="Type a message..." />
+    </div>
+
+    @if (error is not null)
+    {
+        <p style="color:red">@error</p>
+    }
+
+    <button @onclick="SendAsync" disabled="@sending">Send</button>
+}
