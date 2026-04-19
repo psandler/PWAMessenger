@@ -21,10 +21,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architectural Patterns
 
-- **Vertical slice architecture** — code organized by feature, not by layer. Each slice owns its command/query, handler, projections, and endpoint.
+- **Vertical slice architecture** — code organized by feature, not by layer. Each slice owns its command/query, handler, projections, and endpoint. Each feature folder (`Features/SendMessage/`, etc.) is one slice. Delivery milestones ("Milestone 1", "Milestone 2") are groups of slices.
 - **Event sourcing** — all state changes are recorded as immutable events via Polecat. Read models are built from projections onto EF Core-managed relational tables.
 - **Inline vs async projections** — see section below.
 - See `Documents/architecture.md` for full design detail, event catalog, and implementation plan.
+
+## Event Modeling — Required Before Coding
+
+**No code is written for a slice until its event model is documented and agreed on.**
+
+Event modeling is the design step that precedes implementation. Before any feature folder is created:
+
+1. Write a model document in `Documents/` (e.g. `slice-2-model.md`)
+2. The document must define: happy path narrative, events, commands, read models, Given/When/Then test cases, and alternate paths
+3. Every field in a command must be traceable to a read model that displayed it to the user
+4. Every event must be consumed by at least one projection or automation
+5. Once the model is agreed on, implementation follows it exactly — no undocumented events or projections
+
+If asked to implement a feature without an existing model document, **stop and produce the model first**. Reference: `Documents/milestone-1-model.md` as the canonical example of the format.
 
 ## Build & Run
 

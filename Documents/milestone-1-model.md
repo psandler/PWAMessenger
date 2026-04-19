@@ -1,4 +1,4 @@
-# Slice 1 Model — Login and Exist
+# Milestone 1 Model — Login and Exist
 
 **Deliverable:** A real user can log in with their email address, set a display name, and be reachable by push notification.
 

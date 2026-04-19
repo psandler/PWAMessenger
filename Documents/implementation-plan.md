@@ -1,10 +1,10 @@
 # Implementation Plan
 
-The goal is working software from the earliest possible point. The approach is a two-slice walking skeleton before any match domain work begins.
+The goal is working software from the earliest possible point. The approach is a two-milestone walking skeleton before any match domain work begins.
 
 ---
 
-## Slice 1 — Login and Exist ✓ Complete
+## Milestone 1 — Login and Exist ✓ Complete
 
 Everything needed for a user to authenticate and be reachable.
 
@@ -18,7 +18,7 @@ Everything needed for a user to authenticate and be reachable.
 
 ---
 
-## Slice 2 — Send a Message
+## Milestone 2 — Send a Message
 
 Everything needed for one authenticated user to send a push notification to another.
 

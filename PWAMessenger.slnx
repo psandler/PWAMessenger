@@ -9,6 +9,7 @@
     <File Path="Documents/firebase-api-key-security.md" />
     <File Path="Documents/setup-database.sql" />
     <File Path="Documents/slice-1-model.md" />
+    <File Path="Documents/slice-2-model.md" />
   </Folder>
   <Project Path="PWAMessenger.Api/PWAMessenger.Api.csproj" />
   <Project Path="PWAMessenger.Client/PWAMessenger.Client.csproj" />
