@@ -1,0 +1,94 @@
+---
+slices:
+  Login:
+    # command-without-event and slice-missing-event are intentional:
+    # CheckInvite is a gate check that hands off to Auth0 — no domain event is produced.
+    # Auth0 owns the auth event; it is outside our system boundary.
+    steps:
+      - t: User/Login Form
+      - c: Client/CheckInvite
+        props:
+          email: string
+      - v: Auth0/Passwordless Email
+    tests:
+      HappyPath:
+        given: null
+        when:
+          - c: Client/CheckInvite
+            props:
+              email: invited@example.com
+        then:
+          - v: Auth0/Passwordless Email
+      EmailNotInvited:
+        when:
+          - c: Client/CheckInvite
+            props:
+              email: unknown@example.com
+        then:
+          - x: EmailNotInvited
+
+  RegisterUser:
+    steps:
+      - t: User/Onboarding Form
+      - c: API/RegisterUser
+        props:
+          displayName: string
+      - e: API/UserRegistered
+        props:
+          auth0Id: string
+          email: string
+          displayName: string
+          invitedUserId: int
+      - v: User/Notification Prompt
+    tests:
+      HappyPath:
+        given:
+          - v: User/Onboarding Form
+        when:
+          - c: API/RegisterUser
+            props:
+              displayName: Phil
+        then:
+          - e: API/UserRegistered
+      AlreadyRegistered:
+        given:
+          - e: API/UserRegistered
+        when:
+          - c: API/RegisterUser
+            props:
+              displayName: Phil
+        then:
+          - x: AlreadyRegistered
+      NotInvited:
+        when:
+          - c: API/RegisterUser
+            props:
+              displayName: Phil
+        then:
+          - x: NotInvited
+
+  GrantNotificationPermission:
+    steps:
+      - t: User/Notification Prompt
+      - c: Client/RequestNotificationPermission
+      - e: API/FcmTokenRegistered
+        props:
+          auth0Id: string
+          fcmToken: string
+      - v: User/Home Screen
+    tests:
+      HappyPath:
+        given:
+          - e: API/UserRegistered
+        when:
+          - c: Client/RequestNotificationPermission
+        then:
+          - e: API/FcmTokenRegistered
+          - v: User/Home Screen
+      PermissionDenied:
+        given:
+          - e: API/UserRegistered
+        when:
+          - c: Client/RequestNotificationPermission
+        then:
+          - v: User/Home Screen

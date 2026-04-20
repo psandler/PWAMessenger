@@ -28,17 +28,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Event Modeling — Required Before Coding
 
-**No code is written for a slice until its event model is documented and agreed on.**
+**No code is written for a slice until its event model is documented, expressed in emlang, and the diagram has been reviewed by a human.**
 
 Event modeling is the design step that precedes implementation. Before any feature folder is created:
 
-1. Write a model document in `Documents/` (e.g. `slice-2-model.md`)
+1. Write a milestone model document in `Documents/` (e.g. `milestone-3-model.md`) following the format in `Documents/milestone-1-model.md`
 2. The document must define: happy path narrative, events, commands, read models, Given/When/Then test cases, and alternate paths
-3. Every field in a command must be traceable to a read model that displayed it to the user
-4. Every event must be consumed by at least one projection or automation
-5. Once the model is agreed on, implementation follows it exactly — no undocumented events or projections
+3. Write the emlang YAML for each slice in `Documents/event-models/` (e.g. `milestone-3.yaml`)
+4. Human generates and reviews the diagram — see `Documents/human-todo.md` for the commands
+5. Every field in a command must be traceable to a read model that displayed it to the user
+6. Every event must be consumed by at least one projection or automation
+7. Once the diagram is reviewed and the model is agreed on, implementation follows it exactly — no undocumented events or projections
 
-If asked to implement a feature without an existing model document, **stop and produce the model first**. Reference: `Documents/milestone-1-model.md` as the canonical example of the format.
+If asked to implement a feature without a reviewed emlang diagram, **stop and produce the model and YAML first**. Reference: `Documents/milestone-1-model.md` as the canonical example of the model document format, and `Documents/event-models/milestone-1.yaml` as the canonical example of the emlang format.
+
+### Two artifacts, one design — both required
+
+The model document (markdown) and the emlang YAML are complementary — neither replaces the other:
+
+- **Model document** (`Documents/milestone-N-model.md`) — the narrative design artifact. Written first. Contains the happy path story, alternate paths, rationale, and Given/When/Then in prose. This is where design intent lives.
+- **emlang YAML** (`Documents/event-models/milestone-N.yaml`) — the formal, machine-readable expression of the model. Derived from the model document. Generates the visual diagram for human review.
+
+The YAML flows from the model. If they conflict, the model document is the source of truth.
+
+### emlang files
+- Source YAML: `Documents/event-models/milestone-N.yaml`
+- Generated HTML: `Documents/event-models/emlang-output/` (gitignored — regenerate locally)
+- Lint warnings for query-only slices and boundary-crossing slices (no event) are expected and intentional — document them with a comment in the YAML
 
 ## Build & Run
 

@@ -16,7 +16,8 @@
       "Bash(grep -r \"ProjectionLifecycle\\\\|Lifecycle\" C:Userspsand.nugetpackagesjasperfx.events --include=*.xml -l)",
       "Bash(\"C:\\\\projects\\\\PWAMessenger\\\\PWAMessenger.Api\\\\Program.cs\")",
       "Bash(dotnet restore:*)",
-      "Bash(dotnet test:*)"
+      "Bash(dotnet test:*)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

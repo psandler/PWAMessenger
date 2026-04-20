@@ -13,3 +13,6 @@ secrets.txt
 appsettings.secrets.json
 
 # User secrets are stored outside the repo by .NET tooling automatically
+
+# emlang generated diagrams — regenerate locally from the YAML source files
+Documents/event-models/emlang-output/

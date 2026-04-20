@@ -1,0 +1,85 @@
+---
+slices:
+  GetUsers:
+    # slice-missing-event is intentional: GetUsers is a query (read-only scaffold),
+    # not a command/event flow. No event is the correct design.
+    - t: User/Send Page
+    - v: User/User List
+      props:
+        userId: int
+        displayName: string
+
+  SendMessage:
+    steps:
+      - t: User/Send Form
+      - c: API/SendMessage
+        props:
+          recipientId: int
+          body: string
+      - e: API/MessageSent
+        props:
+          messageId: guid
+          senderId: int
+          recipientId: int
+          body: string
+          sentAt: datetime
+      - v: User/Sent Confirmation
+      - v: System/Push Notification
+    tests:
+      HappyPath:
+        given:
+          - e: API/UserRegistered
+            props:
+              userId: 2
+          - e: API/FcmTokenRegistered
+            props:
+              userId: 2
+        when:
+          - c: API/SendMessage
+            props:
+              recipientId: 2
+              body: Are you free Saturday?
+        then:
+          - e: API/MessageSent
+          - v: System/Push Notification
+      RecipientHasNoTokens:
+        given:
+          - e: API/UserRegistered
+            props:
+              userId: 2
+        when:
+          - c: API/SendMessage
+            props:
+              recipientId: 2
+              body: Are you free Saturday?
+        then:
+          - e: API/MessageSent
+      RecipientNotFound:
+        when:
+          - c: API/SendMessage
+            props:
+              recipientId: 999
+              body: Are you free Saturday?
+        then:
+          - x: RecipientNotFound
+      EmptyBody:
+        when:
+          - c: API/SendMessage
+            props:
+              body: ""
+        then:
+          - x: EmptyBody
+      StaleToken:
+        given:
+          - e: API/FcmTokenRegistered
+            props:
+              userId: 2
+              fcmToken: expired-token
+        when:
+          - c: API/SendMessage
+            props:
+              recipientId: 2
+              body: Are you free Saturday?
+        then:
+          - e: API/MessageSent
+          - x: FcmTokenUnregistered

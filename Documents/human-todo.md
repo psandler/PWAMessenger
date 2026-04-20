@@ -4,6 +4,48 @@ Tasks that require human action before or alongside implementation. Work through
 
 ---
 
+## 0. Event Modeling Tooling (emlang)
+
+emlang is used to generate visual event model diagrams from YAML source files before any slice is coded. Review the diagram and sign off before implementation begins.
+
+### One-time setup
+
+Install the emlang CLI:
+```powershell
+go install github.com/emlang-project/emlang/cmd/emlang@latest
+```
+
+Ensure `C:\Users\<you>\go\bin` is on your PATH (add via System Environment Variables if needed).
+
+### Generating diagrams
+
+Run from the repo root. Output goes to `Documents/event-models/emlang-output/` (gitignored):
+
+```powershell
+mkdir -Force Documents\event-models\emlang-output
+
+emlang diagram "Documents\event-models\milestone-1.yaml" -o "Documents\event-models\emlang-output\milestone-1.html"
+emlang diagram "Documents\event-models\milestone-2.yaml" -o "Documents\event-models\emlang-output\milestone-2.html"
+```
+
+Open to review:
+```powershell
+start Documents\event-models\emlang-output\milestone-1.html
+start Documents\event-models\emlang-output\milestone-2.html
+```
+
+Add a new command for each new milestone YAML as the project grows.
+
+### Linting
+
+```powershell
+emlang lint "Documents\event-models\milestone-1.yaml"
+```
+
+Warnings for query-only slices (`slice-missing-event`) and boundary-crossing commands (`command-without-event`) are intentional — they are documented with comments in the YAML files.
+
+---
+
 ## 1. Auth0 Setup
 
 Auth0 provides email passwordless authentication. Auth0 handles email delivery natively — no external email provider account needed.
